@@ -73,6 +73,7 @@ impl Game for WalkTheDog {
         } else {
             self.frame = 0;
         }
+        self.rhb.as_mut().unwrap().update();
     }
     fn draw(&self, renderer: &Renderer) {
         let frame_name = format!("Run ({}).png", (self.frame / 3) + 1);
@@ -107,5 +108,7 @@ impl Game for WalkTheDog {
                 },
             )
         });
+
+        self.rhb.as_ref().unwrap().draw(renderer);
     }
 }
