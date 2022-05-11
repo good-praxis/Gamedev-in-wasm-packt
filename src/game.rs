@@ -1,5 +1,5 @@
 use self::rhb::RedHatBoy;
-use crate::engine::{Game, KeyState, Point, Renderer, Sheet};
+use crate::engine::{Game, KeyState, Point, Rect, Renderer, Sheet};
 use crate::{browser, engine};
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
@@ -38,9 +38,19 @@ impl Game for WalkTheDog {
             self.rhb.as_mut().unwrap().run_right();
         }
 
+        if keystate.is_pressed("ArrowDown") {
+            self.rhb.as_mut().unwrap().slide();
+        }
+
         self.rhb.as_mut().unwrap().update();
     }
     fn draw(&self, renderer: &Renderer) {
+        renderer.clear(&Rect {
+            x: 0.0,
+            y: 0.0,
+            width: 600.0,
+            height: 600.0,
+        });
         self.rhb.as_ref().unwrap().draw(renderer);
     }
 }
