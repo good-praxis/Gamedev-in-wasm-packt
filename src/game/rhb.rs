@@ -2,6 +2,9 @@ use self::red_hat_boy_states::*;
 use crate::engine::{Rect, Renderer, Sheet};
 use web_sys::HtmlImageElement;
 
+const IDLE_FRAMES: u8 = 29;
+const RUNNING_FRAMES: u8 = 23;
+
 pub struct RedHatBoy {
     state_machine: RedHatBoyStateMachine,
     sprite_sheet: Sheet,
@@ -85,19 +88,11 @@ impl RedHatBoyStateMachine {
     fn update(self) -> Self {
         match self {
             RedHatBoyStateMachine::Idle(mut state) => {
-                if state.context.frame < 29 {
-                    state.context.frame += 1;
-                } else {
-                    state.context.frame = 0;
-                }
+                state.context.update(IDLE_FRAMES);
                 RedHatBoyStateMachine::Idle(state)
             }
             RedHatBoyStateMachine::Running(mut state) => {
-                if state.context.frame < 23 {
-                    state.context.frame += 1;
-                } else {
-                    state.context.frame = 0;
-                }
+                state.context.update(RUNNING_FRAMES);
                 RedHatBoyStateMachine::Running(state)
             }
         }
@@ -165,6 +160,17 @@ pub mod red_hat_boy_states {
     impl<S> RedHatBoyState<S> {
         pub fn context(&self) -> &RedHatBoyContext {
             &self.context
+        }
+    }
+
+    impl RedHatBoyContext {
+        pub fn update(mut self, frame_count: u8) -> Self {
+            if self.frame < frame_count {
+                self.frame += 1;
+            } else {
+                self.frame = 0;
+            }
+            self
         }
     }
 }
