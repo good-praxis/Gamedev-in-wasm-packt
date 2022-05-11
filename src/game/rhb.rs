@@ -3,7 +3,7 @@ use crate::engine::{Rect, Renderer, Sheet};
 use web_sys::HtmlImageElement;
 
 pub struct RedHatBoy {
-    state_machine: RedHatBoyStateMachine,
+    state: RedHatBoyStateMachine,
     sprite_sheet: Sheet,
     image: HtmlImageElement,
 }
@@ -11,7 +11,7 @@ pub struct RedHatBoy {
 impl RedHatBoy {
     pub fn new(sheet: Sheet, image: HtmlImageElement) -> Self {
         RedHatBoy {
-            state_machine: RedHatBoyStateMachine::Idle(RedHatBoyState::new()),
+            state: RedHatBoyStateMachine::Idle(RedHatBoyState::new()),
             sprite_sheet: sheet,
             image,
         }
@@ -20,8 +20,8 @@ impl RedHatBoy {
     pub fn draw(&self, renderer: &Renderer) {
         let frame_name = format!(
             "{} ({}).png",
-            self.state_machine.frame_name(),
-            (self.state_machine.context().frame / 3) + 1
+            self.state.frame_name(),
+            (self.state.context().frame / 3) + 1
         );
 
         let sprite = self
@@ -39,15 +39,18 @@ impl RedHatBoy {
                 height: sprite.frame.h.into(),
             },
             &Rect {
-                x: self.state_machine.context().position.x.into(),
-                y: self.state_machine.context().position.y.into(),
+                x: self.state.context().position.x.into(),
+                y: self.state.context().position.y.into(),
                 width: sprite.frame.w.into(),
                 height: sprite.frame.h.into(),
             },
         );
     }
     pub fn update(&mut self) {
-        self.state_machine = self.state_machine.update();
+        self.state = self.state.update();
+    }
+    pub fn run_right(&mut self) {
+        self.state = self.state.transition(Event::Run);
     }
 }
 
@@ -109,6 +112,7 @@ pub mod red_hat_boy_states {
     const RUN_FRAME_NAME: &str = "Run";
     const IDLE_FRAMES: u8 = 29;
     const RUNNING_FRAMES: u8 = 23;
+    const RUNNING_SPEED: i16 = 3;
 
     #[derive(Copy, Clone)]
     pub struct RedHatBoyState<S> {
@@ -121,6 +125,31 @@ pub mod red_hat_boy_states {
         pub frame: u8,
         pub position: Point,
         pub velocity: Point,
+    }
+
+    impl RedHatBoyContext {
+        pub fn update(mut self, frame_count: u8) -> Self {
+            if self.frame < frame_count {
+                self.frame += 1;
+            } else {
+                self.frame = 0;
+            }
+
+            self.position.x += self.velocity.x;
+            self.position.y += self.velocity.y;
+
+            self
+        }
+
+        fn reset_frame(mut self) -> Self {
+            self.frame = 0;
+            self
+        }
+
+        fn run_right(mut self) -> Self {
+            self.velocity.x += RUNNING_SPEED;
+            self
+        }
     }
 
     #[derive(Copy, Clone)]
@@ -141,7 +170,7 @@ pub mod red_hat_boy_states {
         }
         pub fn run(self) -> RedHatBoyState<Running> {
             RedHatBoyState {
-                context: self.context,
+                context: self.context.reset_frame().run_right(),
                 _state: Running {},
             }
         }
@@ -165,21 +194,6 @@ pub mod red_hat_boy_states {
     impl<S> RedHatBoyState<S> {
         pub fn context(&self) -> &RedHatBoyContext {
             &self.context
-        }
-    }
-
-    impl RedHatBoyContext {
-        pub fn update(mut self, frame_count: u8) -> Self {
-            if self.frame < frame_count {
-                self.frame += 1;
-            } else {
-                self.frame = 0;
-            }
-
-            self.position.x += self.velocity.x;
-            self.position.y += self.velocity.y;
-
-            self
         }
     }
 }

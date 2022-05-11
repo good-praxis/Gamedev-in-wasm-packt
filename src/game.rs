@@ -59,6 +59,7 @@ impl Game for WalkTheDog {
 
         if keystate.is_pressed("ArrowRight") {
             velocity.x += 3;
+            self.rhb.as_mut().unwrap().run_right();
         }
 
         if keystate.is_pressed("ArrowLeft") {
