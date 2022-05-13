@@ -100,6 +100,7 @@ impl RedHatBoyStateMachine {
             (RedHatBoyStateMachine::Sliding(state), Event::Update) => state.update().into(),
             (RedHatBoyStateMachine::Jumping(state), Event::Update) => state.update().into(),
             (RedHatBoyStateMachine::Falling(state), Event::Update) => state.update().into(),
+            (RedHatBoyStateMachine::KnockedOut(state), Event::Update) => state.update().into(),
 
             (RedHatBoyStateMachine::Running(state), Event::KnockOut) => state.knock_out().into(),
             (RedHatBoyStateMachine::Jumping(state), Event::KnockOut) => state.knock_out().into(),
@@ -230,21 +231,23 @@ pub mod red_hat_boy_states {
 
     impl RedHatBoyContext {
         pub fn update(mut self, frame_count: u8) -> Self {
-            self.velocity.y += GRAVITY;
-
             if self.frame < frame_count {
                 self.frame += 1;
             } else {
                 self.frame = 0;
             }
 
+            self.physics_update()
+        }
+
+        pub fn physics_update(mut self) -> Self {
+            self.velocity.y += GRAVITY;
             self.position.x += self.velocity.x;
             self.position.y += self.velocity.y;
 
             if self.position.y > FLOOR {
                 self.position.y = FLOOR;
             }
-
             self
         }
 
@@ -428,6 +431,11 @@ pub mod red_hat_boy_states {
     impl RedHatBoyState<KnockedOut> {
         pub fn frame_name(&self) -> &str {
             FALLING_FRAME_NAME
+        }
+
+        pub fn update(mut self) -> Self {
+            self.context = self.context.physics_update();
+            self
         }
     }
 
