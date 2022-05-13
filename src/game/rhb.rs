@@ -1,5 +1,5 @@
 use self::red_hat_boy_states::*;
-use crate::engine::{Rect, Renderer, Sheet};
+use crate::engine::{Cell, Rect, Renderer, Sheet};
 use web_sys::HtmlImageElement;
 
 pub struct RedHatBoy {
@@ -18,17 +18,7 @@ impl RedHatBoy {
     }
 
     pub fn draw(&self, renderer: &Renderer) {
-        let frame_name = format!(
-            "{} ({}).png",
-            self.state.frame_name(),
-            (self.state.context().frame / 3) + 1
-        );
-
-        let sprite = self
-            .sprite_sheet
-            .frames
-            .get(&frame_name)
-            .expect("Cell not found");
+        let sprite = self.current_sprite().expect("Cell not found");
 
         renderer.draw_image(
             &self.image,
@@ -38,14 +28,31 @@ impl RedHatBoy {
                 width: sprite.frame.w.into(),
                 height: sprite.frame.h.into(),
             },
-            &Rect {
-                x: (self.state.context().position.x + sprite.sprite_source_size.x as i16).into(),
-                y: (self.state.context().position.y + sprite.sprite_source_size.y as i16).into(),
-                width: sprite.frame.w.into(),
-                height: sprite.frame.h.into(),
-            },
+            &self.bounding_box(),
         );
     }
+    fn frame_name(&self) -> String {
+        format!(
+            "{} ({}).png",
+            self.state.frame_name(),
+            (self.state.context().frame / 3) + 1
+        )
+    }
+    fn current_sprite(&self) -> Option<&Cell> {
+        self.sprite_sheet.frames.get(&self.frame_name())
+    }
+
+    pub fn bounding_box(&self) -> Rect {
+        let sprite = self.current_sprite().expect("Cell not found");
+
+        Rect {
+            x: (self.state.context().position.x + sprite.sprite_source_size.x as i16).into(),
+            y: (self.state.context().position.y + sprite.sprite_source_size.y as i16).into(),
+            width: sprite.frame.w.into(),
+            height: sprite.frame.h.into(),
+        }
+    }
+
     pub fn update(&mut self) {
         self.state = self.state.update();
     }
