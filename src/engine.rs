@@ -137,8 +137,6 @@ impl Renderer {
                 destination.height.into(),
             )
             .expect("Drawing is throwing exceptions! Unrecoverable error.");
-
-        self.draw_rect(destination);
     }
 
     pub fn draw_entire_image(&self, image: &HtmlImageElement, position: &Point) {
@@ -277,9 +275,11 @@ impl Image {
     }
     pub fn draw(&self, renderer: &Renderer) {
         renderer.draw_entire_image(&self.element, &self.position);
-        renderer.draw_rect(self.bounding_box())
     }
     pub fn bounding_box(&self) -> &Rect {
         &self.bounding_box
+    }
+    pub fn draw_bounding_box(&self, renderer: &Renderer) {
+        renderer.draw_rect(self.bounding_box())
     }
 }

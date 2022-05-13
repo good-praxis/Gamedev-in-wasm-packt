@@ -70,6 +70,9 @@ impl Platform {
             height: platform.frame.h.into(),
         }
     }
+    fn draw_bounding_box(&self, renderer: &Renderer) {
+        renderer.draw_rect(&self.bounding_box())
+    }
 }
 
 #[async_trait(?Send)]
@@ -124,7 +127,11 @@ impl Game for WalkTheDog {
                 .bounding_box()
                 .intersects(&walk.platform.bounding_box())
             {
-                walk.boy.land_on(walk.platform.bounding_box().y as i16);
+                if walk.boy.velocity_y() > 0 && walk.boy.pos_y() < walk.platform.position.y {
+                    walk.boy.land_on(walk.platform.bounding_box().y as i16);
+                } else {
+                    walk.boy.knock_out();
+                }
             }
 
             if walk
@@ -132,7 +139,7 @@ impl Game for WalkTheDog {
                 .bounding_box()
                 .intersects(walk.stone.bounding_box())
             {
-                walk.boy.knock_out();
+                //walk.boy.knock_out();
             }
         }
     }
@@ -147,8 +154,11 @@ impl Game for WalkTheDog {
         if let WalkTheDog::Loaded(walk) = self {
             walk.background.draw(renderer);
             walk.boy.draw(renderer);
+            walk.boy.draw_bounding_box(renderer);
             walk.stone.draw(renderer);
+            walk.stone.draw_bounding_box(renderer);
             walk.platform.draw(renderer);
+            walk.platform.draw_bounding_box(renderer);
         }
     }
 }

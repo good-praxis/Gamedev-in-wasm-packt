@@ -15,6 +15,10 @@ module.exports = {
   },
   devServer: {
     contentBase: dist,
+      watchOptions: {
+        aggregateTimeout: 200,
+        poll: 200,
+},
   },
   plugins: [
     new CopyPlugin([
@@ -25,4 +29,5 @@ module.exports = {
       crateDirectory: __dirname,
     }),
   ]
+
 };

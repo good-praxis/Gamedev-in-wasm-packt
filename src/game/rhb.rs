@@ -7,7 +7,6 @@ pub struct RedHatBoy {
     sprite_sheet: Sheet,
     image: HtmlImageElement,
 }
-
 impl RedHatBoy {
     pub fn new(sheet: Sheet, image: HtmlImageElement) -> Self {
         RedHatBoy {
@@ -17,6 +16,12 @@ impl RedHatBoy {
         }
     }
 
+    pub fn pos_y(&self) -> i16 {
+        self.state.context().position.y
+    }
+    pub fn velocity_y(&self) -> i16 {
+        self.state.context().velocity.y
+    }
     pub fn draw(&self, renderer: &Renderer) {
         let sprite = self.current_sprite().expect("Cell not found");
 
@@ -28,8 +33,11 @@ impl RedHatBoy {
                 width: sprite.frame.w.into(),
                 height: sprite.frame.h.into(),
             },
-            &self.bounding_box(),
+            &self.destination_box(),
         );
+    }
+    pub fn draw_bounding_box(&self, renderer: &Renderer) {
+        renderer.draw_rect(&self.bounding_box())
     }
     fn frame_name(&self) -> String {
         format!(
@@ -42,7 +50,7 @@ impl RedHatBoy {
         self.sprite_sheet.frames.get(&self.frame_name())
     }
 
-    pub fn bounding_box(&self) -> Rect {
+    pub fn destination_box(&self) -> Rect {
         let sprite = self.current_sprite().expect("Cell not found");
 
         Rect {
@@ -51,6 +59,18 @@ impl RedHatBoy {
             width: sprite.frame.w.into(),
             height: sprite.frame.h.into(),
         }
+    }
+
+    pub fn bounding_box(&self) -> Rect {
+        const X_OFFSET: f32 = 18.0;
+        const Y_OFFSET: f32 = 14.0;
+        const WIDTH_OFFSET: f32 = 28.0;
+        let mut bounding_box = self.destination_box();
+        bounding_box.x += X_OFFSET;
+        bounding_box.width -= WIDTH_OFFSET;
+        bounding_box.y += Y_OFFSET;
+        bounding_box.height -= Y_OFFSET;
+        bounding_box
     }
 
     pub fn update(&mut self) {
