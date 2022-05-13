@@ -68,6 +68,14 @@ impl RedHatBoy {
     pub fn knock_out(&mut self) {
         self.state = self.state.transition(Event::KnockOut);
     }
+    pub fn land(&mut self) {
+        self.state = self
+            .state
+            .transition(Event::Land(red_hat_boy_states::FLOOR));
+    }
+    pub fn land_on(&mut self, position: i16) {
+        self.state = self.state.transition(Event::Land(position))
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -83,6 +91,7 @@ enum RedHatBoyStateMachine {
 pub enum Event {
     Run,
     Jump,
+    Land(i16),
     Slide,
     KnockOut,
     Update,
@@ -94,6 +103,22 @@ impl RedHatBoyStateMachine {
             (RedHatBoyStateMachine::Idle(state), Event::Run) => state.run().into(),
             (RedHatBoyStateMachine::Running(state), Event::Slide) => state.slide().into(),
             (RedHatBoyStateMachine::Running(state), Event::Jump) => state.jump().into(),
+
+            (RedHatBoyStateMachine::Jumping(state), Event::Land(position)) => {
+                state.land_on(position).into()
+            }
+            (RedHatBoyStateMachine::Running(state), Event::Land(position)) => {
+                state.land_on(position).into()
+            }
+            (RedHatBoyStateMachine::Sliding(state), Event::Land(position)) => {
+                state.land_on(position).into()
+            }
+            (RedHatBoyStateMachine::Falling(state), Event::Land(position)) => {
+                state.land_on(position).into()
+            }
+            (RedHatBoyStateMachine::KnockedOut(state), Event::Land(position)) => {
+                state.land_on(position).into()
+            }
 
             (RedHatBoyStateMachine::Idle(state), Event::Update) => state.update().into(),
             (RedHatBoyStateMachine::Running(state), Event::Update) => state.update().into(),
@@ -199,8 +224,10 @@ impl From<FallingEndState> for RedHatBoyStateMachine {
 }
 
 pub mod red_hat_boy_states {
+    use super::super::HEIGHT;
     use crate::engine::Point;
-    const FLOOR: i16 = 479;
+    pub const FLOOR: i16 = 479;
+    const PLAYER_HEIGHT: i16 = HEIGHT - FLOOR;
     const STARTING_POINT: i16 = -20;
     const IDLE_FRAME_NAME: &str = "Idle";
     const RUN_FRAME_NAME: &str = "Run";
@@ -213,6 +240,7 @@ pub mod red_hat_boy_states {
     const JUMPING_FRAMES: u8 = 35;
     const JUMP_SPEED: i16 = -25;
     const GRAVITY: i16 = 1;
+    const TERMINAL_VELOCITY: i16 = 20;
     const FALLING_FRAMES: u8 = 29;
     const FALLING_FRAME_NAME: &str = "Dead";
 
@@ -241,7 +269,10 @@ pub mod red_hat_boy_states {
         }
 
         pub fn physics_update(mut self) -> Self {
-            self.velocity.y += GRAVITY;
+            if self.velocity.y < TERMINAL_VELOCITY {
+                self.velocity.y += GRAVITY;
+            }
+
             self.position.x += self.velocity.x;
             self.position.y += self.velocity.y;
 
@@ -268,6 +299,12 @@ pub mod red_hat_boy_states {
 
         fn stop(mut self) -> Self {
             self.velocity.x = 0;
+            self
+        }
+
+        fn set_on(mut self, position: i16) -> Self {
+            let position = position - PLAYER_HEIGHT;
+            self.position.y = position;
             self
         }
     }
@@ -340,6 +377,12 @@ pub mod red_hat_boy_states {
                 _state: Falling,
             }
         }
+        pub fn land_on(self, position: i16) -> RedHatBoyState<Running> {
+            RedHatBoyState {
+                context: self.context.set_on(position),
+                _state: Running,
+            }
+        }
     }
 
     impl RedHatBoyState<Sliding> {
@@ -367,6 +410,12 @@ pub mod red_hat_boy_states {
                 _state: Falling,
             }
         }
+        pub fn land_on(self, position: i16) -> RedHatBoyState<Sliding> {
+            Self {
+                context: self.context.set_on(position),
+                _state: Sliding,
+            }
+        }
     }
     pub enum SlidingEndState {
         Complete(RedHatBoyState<Running>),
@@ -380,14 +429,14 @@ pub mod red_hat_boy_states {
         pub fn update(mut self) -> JumpingEndState {
             self.context = self.context.update(JUMPING_FRAMES);
             if self.context.position.y >= FLOOR {
-                JumpingEndState::Complete(self.land())
+                JumpingEndState::Complete(self.land_on(HEIGHT))
             } else {
                 JumpingEndState::Jumping(self)
             }
         }
-        pub fn land(self) -> RedHatBoyState<Running> {
+        pub fn land_on(self, position: i16) -> RedHatBoyState<Running> {
             RedHatBoyState {
-                context: self.context.reset_frame(),
+                context: self.context.reset_frame().set_on(position),
                 _state: Running,
             }
         }
@@ -422,6 +471,12 @@ pub mod red_hat_boy_states {
                 _state: KnockedOut,
             }
         }
+        pub fn land_on(self, position: i16) -> RedHatBoyState<Falling> {
+            Self {
+                context: self.context.set_on(position),
+                _state: Falling,
+            }
+        }
     }
     pub enum FallingEndState {
         Complete(RedHatBoyState<KnockedOut>),
@@ -436,6 +491,12 @@ pub mod red_hat_boy_states {
         pub fn update(mut self) -> Self {
             self.context = self.context.physics_update();
             self
+        }
+        pub fn land_on(self, position: i16) -> RedHatBoyState<KnockedOut> {
+            Self {
+                context: self.context.set_on(position),
+                _state: KnockedOut,
+            }
         }
     }
 
