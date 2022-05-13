@@ -88,11 +88,6 @@ impl RedHatBoy {
     pub fn knock_out(&mut self) {
         self.state = self.state.transition(Event::KnockOut);
     }
-    pub fn land(&mut self) {
-        self.state = self
-            .state
-            .transition(Event::Land(red_hat_boy_states::FLOOR));
-    }
     pub fn land_on(&mut self, position: i16) {
         self.state = self.state.transition(Event::Land(position))
     }
