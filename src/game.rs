@@ -8,6 +8,8 @@ use web_sys::HtmlImageElement;
 mod rhb;
 
 pub const HEIGHT: i16 = 600;
+const LOW_PLATFORM: i16 = 420;
+const HIGH_PLATFORM: i16 = 375;
 
 pub enum WalkTheDog {
     Loading,
@@ -120,7 +122,10 @@ impl Game for WalkTheDog {
                 let platform = Platform::new(
                     platform_sheet.into_serde::<Sheet>()?,
                     engine::load_image("tiles.png").await?,
-                    Point { x: 200, y: 400 },
+                    Point {
+                        x: 200,
+                        y: LOW_PLATFORM,
+                    },
                 );
 
                 Ok(Box::new(WalkTheDog::Loaded(Walk {
