@@ -31,10 +31,10 @@ impl RedHatBoy {
         renderer.draw_image(
             &self.image,
             &Rect {
-                x: sprite.frame.x.into(),
-                y: sprite.frame.y.into(),
-                width: sprite.frame.w.into(),
-                height: sprite.frame.h.into(),
+                x: sprite.frame.x,
+                y: sprite.frame.y,
+                width: sprite.frame.w,
+                height: sprite.frame.h,
             },
             &self.destination_box(),
         );
@@ -57,17 +57,17 @@ impl RedHatBoy {
         let sprite = self.current_sprite().expect("Cell not found");
 
         Rect {
-            x: (self.state.context().position.x + sprite.sprite_source_size.x as i16).into(),
-            y: (self.state.context().position.y + sprite.sprite_source_size.y as i16).into(),
-            width: sprite.frame.w.into(),
-            height: sprite.frame.h.into(),
+            x: (self.state.context().position.x + sprite.sprite_source_size.x),
+            y: (self.state.context().position.y + sprite.sprite_source_size.y),
+            width: sprite.frame.w,
+            height: sprite.frame.h,
         }
     }
 
     pub fn bounding_box(&self) -> Rect {
-        const X_OFFSET: f32 = 18.0;
-        const Y_OFFSET: f32 = 14.0;
-        const WIDTH_OFFSET: f32 = 28.0;
+        const X_OFFSET: i16 = 18;
+        const Y_OFFSET: i16 = 14;
+        const WIDTH_OFFSET: i16 = 28;
         let mut bounding_box = self.destination_box();
         bounding_box.x += X_OFFSET;
         bounding_box.width -= WIDTH_OFFSET;

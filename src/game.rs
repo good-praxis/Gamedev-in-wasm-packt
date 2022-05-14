@@ -56,10 +56,10 @@ impl Platform {
         renderer.draw_image(
             &self.image,
             &Rect {
-                x: platform.frame.x.into(),
-                y: platform.frame.y.into(),
-                width: (platform.frame.w * 3).into(),
-                height: platform.frame.h.into(),
+                x: platform.frame.x,
+                y: platform.frame.y,
+                width: (platform.frame.w * 3),
+                height: platform.frame.h,
             },
             &self.destination_box(),
         )
@@ -71,15 +71,15 @@ impl Platform {
             .get("13.png")
             .expect("13.png does not exist");
         Rect {
-            x: self.position.x.into(),
-            y: self.position.y.into(),
-            width: (platform.frame.w * 3).into(),
-            height: platform.frame.h.into(),
+            x: self.position.x,
+            y: self.position.y,
+            width: (platform.frame.w * 3),
+            height: platform.frame.h,
         }
     }
     fn bounding_boxes(&self) -> Vec<Rect> {
-        const X_OFFSET: f32 = 60.0;
-        const END_HEIGHT: f32 = 54.0;
+        const X_OFFSET: i16 = 60;
+        const END_HEIGHT: i16 = 54;
         let destination_box = self.destination_box();
         let bounding_box_one = Rect {
             x: destination_box.x,
@@ -91,7 +91,7 @@ impl Platform {
         let bounding_box_two = Rect {
             x: destination_box.x + X_OFFSET,
             y: destination_box.y,
-            width: destination_box.width - (X_OFFSET * 2.0),
+            width: destination_box.width - (X_OFFSET * 2),
             height: destination_box.height,
         };
 
@@ -191,7 +191,7 @@ impl Game for WalkTheDog {
             for bounding_box in &walk.platform.bounding_boxes() {
                 if walk.boy.bounding_box().intersects(bounding_box) {
                     if walk.boy.velocity_y() > 0 && walk.boy.pos_y() < walk.platform.position.y {
-                        walk.boy.land_on(bounding_box.y as i16);
+                        walk.boy.land_on(bounding_box.y);
                     } else {
                         if walk.boy.velocity_y() < 0 && walk.boy.pos_y() > walk.platform.position.y
                         {
@@ -213,10 +213,10 @@ impl Game for WalkTheDog {
     }
     fn draw(&self, renderer: &Renderer) {
         renderer.clear(&Rect {
-            x: 0.0,
-            y: 0.0,
-            width: 600.0,
-            height: HEIGHT as f32,
+            x: 0,
+            y: 0,
+            width: 600,
+            height: HEIGHT,
         });
 
         if let WalkTheDog::Loaded(walk) = self {
