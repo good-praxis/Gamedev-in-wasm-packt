@@ -27,6 +27,11 @@ pub struct Walk {
     stone: Image,
     platform: Platform,
 }
+impl Walk {
+    fn velocity(&self) -> i16 {
+        -self.boy.walking_speed()
+    }
+}
 
 struct Platform {
     sheet: Sheet,
@@ -156,6 +161,10 @@ impl Game for WalkTheDog {
             }
 
             walk.boy.update();
+
+            walk.platform.position.x += walk.velocity();
+            walk.stone.move_horizontally(walk.velocity());
+            walk.background.move_horizontally(walk.velocity() / 3);
 
             for bounding_box in &walk.platform.bounding_boxes() {
                 if walk.boy.bounding_box().intersects(bounding_box) {

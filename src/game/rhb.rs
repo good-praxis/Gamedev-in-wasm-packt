@@ -22,6 +22,9 @@ impl RedHatBoy {
     pub fn velocity_y(&self) -> i16 {
         self.state.context().velocity.y
     }
+    pub fn walking_speed(&self) -> i16 {
+        self.state.context().velocity.x
+    }
     pub fn draw(&self, renderer: &Renderer) {
         let sprite = self.current_sprite().expect("Cell not found");
 
@@ -296,7 +299,6 @@ pub mod red_hat_boy_states {
                 self.velocity.y += GRAVITY;
             }
 
-            self.position.x += self.velocity.x;
             self.position.y += self.velocity.y;
 
             if self.position.y > FLOOR {
