@@ -1,16 +1,19 @@
-use self::obstacles::Obstacle;
+use self::obstacles::{rightmost, Obstacle};
 use self::rhb::RedHatBoy;
 use crate::engine::{Game, Image, KeyState, Point, Rect, Renderer, Sheet, SpriteSheet};
 use crate::{browser, engine};
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use std::rc::Rc;
+use web_sys::HtmlImageElement;
 
 mod obstacles;
 mod rhb;
 mod segments;
 
 pub const HEIGHT: i16 = 600;
+pub const TIMELINE_MINIMUM: i16 = 1000;
+pub const OBSTACLE_BUFFER: i16 = 20;
 
 pub enum WalkTheDog {
     Loading,
@@ -27,6 +30,8 @@ pub struct Walk {
     backgrounds: [Image; 2],
     obstacles: Vec<Box<dyn Obstacle>>,
     obstacle_sheet: Rc<SpriteSheet>,
+    stone: HtmlImageElement,
+    timeline: i16,
 }
 impl Walk {
     fn velocity(&self) -> i16 {
@@ -53,6 +58,10 @@ impl Game for WalkTheDog {
                     engine::load_image("tiles.png").await?,
                 ));
 
+                let starting_obstacles =
+                    segments::stone_and_platform(stone.clone(), sprite_sheet.clone(), 0);
+
+                let timeline = rightmost(&starting_obstacles);
                 Ok(Box::new(WalkTheDog::Loaded(Walk {
                     boy: rhb,
                     backgrounds: [
@@ -65,8 +74,10 @@ impl Game for WalkTheDog {
                             },
                         ),
                     ],
-                    obstacles: segments::stone_and_platform(stone, sprite_sheet.clone(), 0),
+                    obstacles: starting_obstacles,
                     obstacle_sheet: sprite_sheet,
+                    stone,
+                    timeline,
                 })))
             }
             WalkTheDog::Loaded(_) => Err(anyhow!("Error: Game is already initalized!")),
@@ -110,6 +121,19 @@ impl Game for WalkTheDog {
                 obstacle.move_horizontally(velocity);
                 obstacle.check_intersection(&mut walk.boy)
             });
+
+            if walk.timeline < TIMELINE_MINIMUM {
+                let mut next_obstacles = segments::stone_and_platform(
+                    walk.stone.clone(),
+                    walk.obstacle_sheet.clone(),
+                    walk.timeline + OBSTACLE_BUFFER,
+                );
+
+                walk.timeline = rightmost(&next_obstacles);
+                walk.obstacles.append(&mut next_obstacles);
+            } else {
+                walk.timeline += velocity;
+            }
         }
     }
     fn draw(&self, renderer: &Renderer) {
