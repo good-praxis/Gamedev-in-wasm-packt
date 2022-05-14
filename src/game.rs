@@ -162,6 +162,10 @@ impl Game for WalkTheDog {
                     if walk.boy.velocity_y() > 0 && walk.boy.pos_y() < walk.platform.position.y {
                         walk.boy.land_on(bounding_box.y as i16);
                     } else {
+                        if walk.boy.velocity_y() < 0 && walk.boy.pos_y() > walk.platform.position.y
+                        {
+                            walk.boy.hit_ceiling();
+                        }
                         walk.boy.knock_out();
                     }
                 }

@@ -91,6 +91,9 @@ impl RedHatBoy {
     pub fn land_on(&mut self, position: i16) {
         self.state = self.state.transition(Event::Land(position))
     }
+    pub fn hit_ceiling(&mut self) {
+        self.state = self.state.transition(Event::HitCeiling);
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -107,6 +110,7 @@ pub enum Event {
     Run,
     Jump,
     Land(i16),
+    HitCeiling,
     Slide,
     KnockOut,
     Update,
@@ -133,6 +137,10 @@ impl RedHatBoyStateMachine {
             }
             (RedHatBoyStateMachine::KnockedOut(state), Event::Land(position)) => {
                 state.land_on(position).into()
+            }
+
+            (RedHatBoyStateMachine::Jumping(state), Event::HitCeiling) => {
+                state.hit_ceiling().into()
             }
 
             (RedHatBoyStateMachine::Idle(state), Event::Update) => state.update().into(),
@@ -316,6 +324,10 @@ pub mod red_hat_boy_states {
             self.velocity.x = 0;
             self
         }
+        fn stop_y(mut self) -> Self {
+            self.velocity.y = 0;
+            self
+        }
 
         fn set_on(mut self, position: i16) -> Self {
             let position = position - PLAYER_HEIGHT;
@@ -458,6 +470,12 @@ pub mod red_hat_boy_states {
         pub fn knock_out(&self) -> RedHatBoyState<Falling> {
             RedHatBoyState {
                 context: self.context.reset_frame().stop(),
+                _state: Falling,
+            }
+        }
+        pub fn hit_ceiling(&self) -> RedHatBoyState<Falling> {
+            RedHatBoyState {
+                context: self.context.reset_frame().stop().stop_y(),
                 _state: Falling,
             }
         }
