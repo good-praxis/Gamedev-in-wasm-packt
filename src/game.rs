@@ -37,6 +37,7 @@ pub trait Obstacle {
     fn draw(&self, renderer: &Renderer);
     fn move_horizontally(&mut self, x: i16);
     fn draw_bounding_box(&self, renderer: &Renderer);
+    fn right(&self) -> i16;
 }
 
 struct Platform {
@@ -126,6 +127,12 @@ impl Obstacle for Platform {
             renderer.draw_rect(&bounding_box);
         }
     }
+    fn right(&self) -> i16 {
+        self.bounding_boxes()
+            .last()
+            .unwrap_or(&Rect::default())
+            .right()
+    }
 }
 
 pub struct Barrier {
@@ -153,6 +160,10 @@ impl Obstacle for Barrier {
 
     fn draw_bounding_box(&self, renderer: &Renderer) {
         self.image.draw_bounding_box(renderer);
+    }
+
+    fn right(&self) -> i16 {
+        self.image.right()
     }
 }
 
@@ -231,6 +242,8 @@ impl Game for WalkTheDog {
             if second_background.right() < 0 {
                 second_background.set_x(second_background.right());
             }
+
+            walk.obstacles.retain(|obstacle| obstacle.right() > 0);
 
             walk.obstacles.iter_mut().for_each(|obstacle| {
                 obstacle.move_horizontally(velocity);
