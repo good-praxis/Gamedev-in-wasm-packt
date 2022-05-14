@@ -24,13 +24,19 @@ impl WalkTheDog {
 pub struct Walk {
     boy: RedHatBoy,
     backgrounds: [Image; 2],
-    stone: Image,
-    platform: Platform,
+    obstacles: Vec<Box<dyn Obstacle>>,
 }
 impl Walk {
     fn velocity(&self) -> i16 {
         -self.boy.walking_speed()
     }
+}
+
+pub trait Obstacle {
+    fn check_intersection(&self, boy: &mut RedHatBoy);
+    fn draw(&self, renderer: &Renderer);
+    fn move_horizontally(&mut self, x: i16);
+    fn draw_bounding_box(&self, renderer: &Renderer);
 }
 
 struct Platform {
@@ -45,24 +51,6 @@ impl Platform {
             image,
             position,
         }
-    }
-    fn draw(&self, renderer: &Renderer) {
-        let platform = self
-            .sheet
-            .frames
-            .get("13.png")
-            .expect("13.png does not exist");
-
-        renderer.draw_image(
-            &self.image,
-            &Rect::new_from_x_y(
-                platform.frame.x,
-                platform.frame.y,
-                platform.frame.w * 3,
-                platform.frame.h,
-            ),
-            &self.destination_box(),
-        )
     }
     fn destination_box(&self) -> Rect {
         let platform = self
@@ -94,10 +82,77 @@ impl Platform {
 
         vec![bounding_box_one, bounding_box_two, bounding_box_three]
     }
-    fn draw_bounding_boxes(&self, renderer: &Renderer) {
+}
+impl Obstacle for Platform {
+    fn draw(&self, renderer: &Renderer) {
+        let platform = self
+            .sheet
+            .frames
+            .get("13.png")
+            .expect("13.png does not exist");
+
+        renderer.draw_image(
+            &self.image,
+            &Rect::new_from_x_y(
+                platform.frame.x,
+                platform.frame.y,
+                platform.frame.w * 3,
+                platform.frame.h,
+            ),
+            &self.destination_box(),
+        )
+    }
+    fn move_horizontally(&mut self, x: i16) {
+        self.position.x += x;
+    }
+    fn check_intersection(&self, boy: &mut RedHatBoy) {
+        if let Some(box_to_land_on) = self
+            .bounding_boxes()
+            .iter()
+            .find(|&bounding_box| boy.bounding_box().intersects(bounding_box))
+        {
+            if boy.velocity_y() > 0 && boy.pos_y() < self.position.y {
+                boy.land_on(box_to_land_on.y());
+            } else {
+                if boy.velocity_y() < 0 && boy.pos_y() > self.position.y {
+                    boy.hit_ceiling();
+                }
+                boy.knock_out();
+            }
+        }
+    }
+    fn draw_bounding_box(&self, renderer: &Renderer) {
         for bounding_box in self.bounding_boxes() {
             renderer.draw_rect(&bounding_box);
         }
+    }
+}
+
+pub struct Barrier {
+    image: Image,
+}
+impl Barrier {
+    pub fn new(image: Image) -> Self {
+        Barrier { image }
+    }
+}
+impl Obstacle for Barrier {
+    fn check_intersection(&self, boy: &mut RedHatBoy) {
+        if boy.bounding_box().intersects(self.image.bounding_box()) {
+            boy.knock_out();
+        }
+    }
+
+    fn draw(&self, renderer: &Renderer) {
+        self.image.draw(renderer);
+    }
+
+    fn move_horizontally(&mut self, x: i16) {
+        self.image.move_horizontally(x);
+    }
+
+    fn draw_bounding_box(&self, renderer: &Renderer) {
+        self.image.draw_bounding_box(renderer);
     }
 }
 
@@ -136,8 +191,10 @@ impl Game for WalkTheDog {
                             },
                         ),
                     ],
-                    stone: Image::new(stone, Point { x: 150, y: 546 }),
-                    platform,
+                    obstacles: vec![
+                        Box::new(Barrier::new(Image::new(stone, Point { x: 150, y: 546 }))),
+                        Box::new(platform),
+                    ],
                 })))
             }
             WalkTheDog::Loaded(_) => Err(anyhow!("Error: Game is already initalized!")),
@@ -164,9 +221,6 @@ impl Game for WalkTheDog {
 
             let velocity = walk.velocity();
 
-            walk.platform.position.x += velocity;
-            walk.stone.move_horizontally(velocity);
-
             let [first_background, second_background] = &mut walk.backgrounds;
             first_background.move_horizontally(velocity / 3);
             second_background.move_horizontally(velocity / 3);
@@ -178,27 +232,10 @@ impl Game for WalkTheDog {
                 second_background.set_x(second_background.right());
             }
 
-            for bounding_box in &walk.platform.bounding_boxes() {
-                if walk.boy.bounding_box().intersects(bounding_box) {
-                    if walk.boy.velocity_y() > 0 && walk.boy.pos_y() < walk.platform.position.y {
-                        walk.boy.land_on(bounding_box.y());
-                    } else {
-                        if walk.boy.velocity_y() < 0 && walk.boy.pos_y() > walk.platform.position.y
-                        {
-                            walk.boy.hit_ceiling();
-                        }
-                        walk.boy.knock_out();
-                    }
-                }
-            }
-
-            if walk
-                .boy
-                .bounding_box()
-                .intersects(walk.stone.bounding_box())
-            {
-                walk.boy.knock_out();
-            }
+            walk.obstacles.iter_mut().for_each(|obstacle| {
+                obstacle.move_horizontally(velocity);
+                obstacle.check_intersection(&mut walk.boy)
+            });
         }
     }
     fn draw(&self, renderer: &Renderer) {
@@ -208,10 +245,10 @@ impl Game for WalkTheDog {
             walk.backgrounds.iter().for_each(|bg| bg.draw(renderer));
             walk.boy.draw(renderer);
             walk.boy.draw_bounding_box(renderer);
-            walk.stone.draw(renderer);
-            walk.stone.draw_bounding_box(renderer);
-            walk.platform.draw(renderer);
-            walk.platform.draw_bounding_boxes(renderer);
+            walk.obstacles.iter().for_each(|obstacle| {
+                obstacle.draw(renderer);
+                obstacle.draw_bounding_box(renderer);
+            });
         }
     }
 }
