@@ -55,12 +55,12 @@ impl Platform {
 
         renderer.draw_image(
             &self.image,
-            &Rect {
-                x: platform.frame.x,
-                y: platform.frame.y,
-                width: (platform.frame.w * 3),
-                height: platform.frame.h,
-            },
+            &Rect::new_from_x_y(
+                platform.frame.x,
+                platform.frame.y,
+                platform.frame.w * 3,
+                platform.frame.h,
+            ),
             &self.destination_box(),
         )
     }
@@ -70,37 +70,27 @@ impl Platform {
             .frames
             .get("13.png")
             .expect("13.png does not exist");
-        Rect {
-            x: self.position.x,
-            y: self.position.y,
-            width: (platform.frame.w * 3),
-            height: platform.frame.h,
-        }
+        Rect::new(self.position, platform.frame.w * 3, platform.frame.h)
     }
     fn bounding_boxes(&self) -> Vec<Rect> {
         const X_OFFSET: i16 = 60;
         const END_HEIGHT: i16 = 54;
         let destination_box = self.destination_box();
-        let bounding_box_one = Rect {
-            x: destination_box.x,
-            y: destination_box.y,
-            width: X_OFFSET,
-            height: END_HEIGHT,
-        };
+        let bounding_box_one = Rect::new(destination_box.position, X_OFFSET, END_HEIGHT);
 
-        let bounding_box_two = Rect {
-            x: destination_box.x + X_OFFSET,
-            y: destination_box.y,
-            width: destination_box.width - (X_OFFSET * 2),
-            height: destination_box.height,
-        };
+        let bounding_box_two = Rect::new_from_x_y(
+            destination_box.x() + X_OFFSET,
+            destination_box.y(),
+            destination_box.width - (X_OFFSET * 2),
+            destination_box.height,
+        );
 
-        let bounding_box_three = Rect {
-            x: destination_box.x + destination_box.width - X_OFFSET,
-            y: destination_box.y,
-            width: X_OFFSET,
-            height: END_HEIGHT,
-        };
+        let bounding_box_three = Rect::new_from_x_y(
+            destination_box.x() + destination_box.width - X_OFFSET,
+            destination_box.y(),
+            X_OFFSET,
+            END_HEIGHT,
+        );
 
         vec![bounding_box_one, bounding_box_two, bounding_box_three]
     }
@@ -191,7 +181,7 @@ impl Game for WalkTheDog {
             for bounding_box in &walk.platform.bounding_boxes() {
                 if walk.boy.bounding_box().intersects(bounding_box) {
                     if walk.boy.velocity_y() > 0 && walk.boy.pos_y() < walk.platform.position.y {
-                        walk.boy.land_on(bounding_box.y);
+                        walk.boy.land_on(bounding_box.y());
                     } else {
                         if walk.boy.velocity_y() < 0 && walk.boy.pos_y() > walk.platform.position.y
                         {
@@ -212,12 +202,7 @@ impl Game for WalkTheDog {
         }
     }
     fn draw(&self, renderer: &Renderer) {
-        renderer.clear(&Rect {
-            x: 0,
-            y: 0,
-            width: 600,
-            height: HEIGHT,
-        });
+        renderer.clear(&Rect::new_from_x_y(0, 0, 600, HEIGHT));
 
         if let WalkTheDog::Loaded(walk) = self {
             walk.backgrounds.iter().for_each(|bg| bg.draw(renderer));
