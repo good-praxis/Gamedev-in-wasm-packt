@@ -40,7 +40,7 @@ impl Walk {
     }
     fn generate_next_segment(&mut self) {
         let mut rng = thread_rng();
-        let next_segment = rng.gen_range(0..2);
+        let next_segment = rng.gen_range(0..3);
 
         let mut next_obstacles = match next_segment {
             0 => segments::stone_and_platform(
@@ -49,6 +49,11 @@ impl Walk {
                 self.timeline + OBSTACLE_BUFFER,
             ),
             1 => segments::platform_and_stone(
+                self.stone.clone(),
+                self.obstacle_sheet.clone(),
+                self.timeline + OBSTACLE_BUFFER,
+            ),
+            2 => segments::stone_on_low_platform(
                 self.stone.clone(),
                 self.obstacle_sheet.clone(),
                 self.timeline + OBSTACLE_BUFFER,
@@ -133,7 +138,7 @@ impl Game for WalkTheDog {
                 first_background.set_x(second_background.right());
             }
             if second_background.right() < 0 {
-                second_background.set_x(second_background.right());
+                second_background.set_x(first_background.right());
             }
 
             walk.obstacles.retain(|obstacle| obstacle.right() > 0);
