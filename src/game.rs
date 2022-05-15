@@ -1,4 +1,4 @@
-use crate::engine::{Game, Image, KeyState, Point, Rect, Renderer, Sheet, SpriteSheet};
+use crate::engine::{Audio, Game, Image, KeyState, Point, Rect, Renderer, Sheet, SpriteSheet};
 use crate::{browser, engine};
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
@@ -75,7 +75,11 @@ impl Game for WalkTheDog {
                 let background = engine::load_image("BG.png").await?;
                 let background_width = background.width() as i16;
                 let stone = engine::load_image("Stone.png").await?;
-                let rhb = RedHatBoy::new(sheet, engine::load_image("rhb.png").await?);
+
+                let audio = Audio::new()?;
+                let sound = audio.load_sound("SFX_Jump_23.mp3").await?;
+
+                let rhb = RedHatBoy::new(sheet, engine::load_image("rhb.png").await?, audio, sound);
 
                 let tiles = browser::fetch_json("tiles.json").await?;
 

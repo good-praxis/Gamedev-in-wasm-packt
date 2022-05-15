@@ -1,5 +1,5 @@
 use self::red_hat_boy_states::*;
-use crate::engine::{Cell, Rect, Renderer, Sheet};
+use crate::engine::{Audio, Cell, Rect, Renderer, Sheet, Sound};
 use web_sys::HtmlImageElement;
 
 pub struct RedHatBoy {
@@ -8,9 +8,9 @@ pub struct RedHatBoy {
     image: HtmlImageElement,
 }
 impl RedHatBoy {
-    pub fn new(sheet: Sheet, image: HtmlImageElement) -> Self {
+    pub fn new(sheet: Sheet, image: HtmlImageElement, audio: Audio, jump_sound: Sound) -> Self {
         RedHatBoy {
-            state: RedHatBoyStateMachine::Idle(RedHatBoyState::new()),
+            state: RedHatBoyStateMachine::Idle(RedHatBoyState::new(audio, jump_sound)),
             sprite_sheet: sheet,
             image,
         }
@@ -251,7 +251,9 @@ impl From<FallingEndState> for RedHatBoyStateMachine {
 
 pub mod red_hat_boy_states {
     use super::super::HEIGHT;
+    use super::*;
     use crate::engine::Point;
+
     pub const FLOOR: i16 = 479;
     const PLAYER_HEIGHT: i16 = HEIGHT - FLOOR;
     const STARTING_POINT: i16 = -20;
@@ -281,6 +283,8 @@ pub mod red_hat_boy_states {
         pub frame: u8,
         pub position: Point,
         pub velocity: Point,
+        audio: Audio,
+        jump_sound: Sound,
     }
 
     impl RedHatBoyContext {
@@ -336,6 +340,13 @@ pub mod red_hat_boy_states {
             self.position.y = position;
             self
         }
+
+        fn play_jump_sound(self) -> Self {
+            if let Err(err) = self.audio.play_sound(&self.jump_sound) {
+                log!("Error playing jump sound {:#?}", err);
+            }
+            self
+        }
     }
 
     #[derive(Copy, Clone)]
@@ -352,7 +363,7 @@ pub mod red_hat_boy_states {
     pub struct KnockedOut;
 
     impl RedHatBoyState<Idle> {
-        pub fn new() -> Self {
+        pub fn new(audio: Audio, jump_sound: Sound) -> Self {
             RedHatBoyState {
                 context: RedHatBoyContext {
                     frame: 0,
@@ -361,6 +372,8 @@ pub mod red_hat_boy_states {
                         y: FLOOR,
                     },
                     velocity: Point { x: 0, y: 0 },
+                    audio,
+                    jump_sound,
                 },
                 _state: Idle,
             }
@@ -396,7 +409,11 @@ pub mod red_hat_boy_states {
         }
         pub fn jump(self) -> RedHatBoyState<Jumping> {
             RedHatBoyState {
-                context: self.context.set_vertical_velocity(JUMP_SPEED).reset_frame(),
+                context: self
+                    .context
+                    .set_vertical_velocity(JUMP_SPEED)
+                    .reset_frame()
+                    .play_jump_sound(),
                 _state: Jumping,
             }
         }
