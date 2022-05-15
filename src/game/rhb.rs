@@ -77,29 +77,29 @@ impl RedHatBoy {
     }
 
     pub fn update(&mut self) {
-        self.state = self.state.update();
+        self.state = self.state.clone().update();
     }
     pub fn run_right(&mut self) {
-        self.state = self.state.transition(Event::Run);
+        self.state = self.state.clone().transition(Event::Run);
     }
     pub fn slide(&mut self) {
-        self.state = self.state.transition(Event::Slide);
+        self.state = self.state.clone().transition(Event::Slide);
     }
     pub fn jump(&mut self) {
-        self.state = self.state.transition(Event::Jump);
+        self.state = self.state.clone().transition(Event::Jump);
     }
     pub fn knock_out(&mut self) {
-        self.state = self.state.transition(Event::KnockOut);
+        self.state = self.state.clone().transition(Event::KnockOut);
     }
     pub fn land_on(&mut self, position: i16) {
-        self.state = self.state.transition(Event::Land(position))
+        self.state = self.state.clone().transition(Event::Land(position))
     }
     pub fn hit_ceiling(&mut self) {
-        self.state = self.state.transition(Event::HitCeiling);
+        self.state = self.state.clone().transition(Event::HitCeiling);
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 enum RedHatBoyStateMachine {
     Idle(RedHatBoyState<Idle>),
     Running(RedHatBoyState<Running>),
@@ -121,7 +121,7 @@ pub enum Event {
 
 impl RedHatBoyStateMachine {
     fn transition(self, event: Event) -> Self {
-        match (self, event) {
+        match (self.clone(), event) {
             (RedHatBoyStateMachine::Idle(state), Event::Run) => state.run().into(),
             (RedHatBoyStateMachine::Running(state), Event::Slide) => state.slide().into(),
             (RedHatBoyStateMachine::Running(state), Event::Jump) => state.jump().into(),
@@ -270,13 +270,13 @@ pub mod red_hat_boy_states {
     const FALLING_FRAMES: u8 = 29;
     const FALLING_FRAME_NAME: &str = "Dead";
 
-    #[derive(Copy, Clone)]
+    #[derive(Clone)]
     pub struct RedHatBoyState<S> {
         context: RedHatBoyContext,
         _state: S,
     }
 
-    #[derive(Copy, Clone)]
+    #[derive(Clone)]
     pub struct RedHatBoyContext {
         pub frame: u8,
         pub position: Point,
@@ -402,7 +402,7 @@ pub mod red_hat_boy_states {
         }
         pub fn knock_out(&self) -> RedHatBoyState<Falling> {
             RedHatBoyState {
-                context: self.context.reset_frame().stop(),
+                context: self.context.clone().reset_frame().stop(),
                 _state: Falling,
             }
         }
@@ -435,7 +435,7 @@ pub mod red_hat_boy_states {
         }
         pub fn knock_out(&self) -> RedHatBoyState<Falling> {
             RedHatBoyState {
-                context: self.context.reset_frame().stop(),
+                context: self.context.clone().reset_frame().stop(),
                 _state: Falling,
             }
         }
@@ -471,13 +471,13 @@ pub mod red_hat_boy_states {
         }
         pub fn knock_out(&self) -> RedHatBoyState<Falling> {
             RedHatBoyState {
-                context: self.context.reset_frame().stop(),
+                context: self.context.clone().reset_frame().stop(),
                 _state: Falling,
             }
         }
         pub fn hit_ceiling(&self) -> RedHatBoyState<Falling> {
             RedHatBoyState {
-                context: self.context.reset_frame().stop().stop_y(),
+                context: self.context.clone().reset_frame().stop().stop_y(),
                 _state: Falling,
             }
         }
