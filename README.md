@@ -1,3 +1,7 @@
+## Oh? What's this?
+This is a follow-along repository to my work on the book [Game Development with Rust and WebAssembly](https://www.packtpub.com/product/game_development/9781801070973), with the book's project source code found [here](https://github.com/PacktPublishing/Game-Development-with-Rust-and-WebAssembly).
+
+
 ## How to install
 
 ```sh
